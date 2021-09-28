@@ -1,0 +1,23 @@
+Variables in file: ./dc_glacier/savedata/Stokes_prognostic_no_debris.dat
+Elmer version: 8.3
+Elmer revision: 05a2ed4
+Elmer compilation date: 2018-10-02
+Solver input file: stokes_prognostic_no_debris.sif
+File started at: 2021/09/28 17:28:13
+    457 boundary nodes for each step
+      0 polyline nodes for each step
+  1: Time step
+  2: Iteration step
+  3: Boundary condition
+  4: Node index
+  5: coordinate 1
+  6: coordinate 2
+  7: coordinate 3
+  8: height
+  9: velocity 1
+ 10: velocity 2
+ 11: debris
+ 12: massbalance
+ 13: zs
+ 14: zs loads
+ 15: zs residual
