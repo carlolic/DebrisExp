@@ -472,22 +472,15 @@ FUNCTION getMassBalance(Model, Node, InputArray) RESULT(MassBalance)
   LW = 2.9          ! W/m^2 /100m                       2.9
   SW = 1.3          ! W/m^2 /100m                       1.3
   HumidityG = 0     ! % /100m         rough estimate
-  AirTemp = 0.79     ! C /100m
-  WindSpeed = 0.01  ! m/s /100m       rough estimate    0.2
+  AirTemp = 0.7     ! C /100m
+  WindSpeed = 0.02  ! m/s /100m       rough estimate    0.2
   
   ! accumulation follows a linear increase above the ELA up to a plateau
   AccG = 0.1                    ! m w.e. /100m
   AccMax = 1                    ! m w.e.
   ReferenceElevation = 2200     ! m
   InitialDebris = 0             ! m
-  
-  !AblationDays = 120            !
-  AblationDays =  -Coord2*7.0/50.0 + 470.0
-  If(AblationDays .lt. 0.0) then
-    AblationDays = 0.0
-  Else if(AblationDays .gt. 120.0) then
-    AblationDays = 120.0
-  End if
+  AblationDays = 120            !
   
   In = 100                 ! Wm^-2        incoming long wave
   Q = 500                  ! Wm^-2        incoming short wave
@@ -526,11 +519,7 @@ FUNCTION getMassBalance(Model, Node, InputArray) RESULT(MassBalance)
                   Rhoi*Lm*Ustar)/((((Um-(Coord2-ReferenceElevation)*WindSpeed/100) &
                   -2*Ustar)*EXP(-Gamma*Xr))/Ustar+EXP(Gamma*Debris)))*100*24*60*60      
   
-  If(-MassBalanceCmDayDebris .ge. 0.0) then
-    MassBalanceMYearDebris = -MassBalanceCmDayDebris/100*70.0
-  Else
-    MassBalanceMYearDebris = -MassBalanceCmDayDebris/100*AblationDays
-  End if
+  MassBalanceMYearDebris = -MassBalanceCmDayDebris/100*AblationDays
   MassBalance = MassBalanceMYearDebris
   
   RETURN
@@ -566,22 +555,15 @@ FUNCTION initMassBalance(Model, Node, InputArray) RESULT(massbalanceIni)
   LW = 2.9          ! W/m^2 /100m                       2.9
   SW = 1.3          ! W/m^2 /100m                       1.3
   HumidityG = 0     ! % /100m         rough estimate
-  AirTemp = 0.79     ! C /100m
-  WindSpeed = 0.01  ! m/s /100m       rough estimate    0.2
+  AirTemp = 0.7     ! C /100m
+  WindSpeed = 0.02  ! m/s /100m       rough estimate    0.2
   
   ! accumulation follows a linear increase above the ELA up to a plateau
   AccG = 0.1                    ! m w.e. /100m
   AccMax = 1                    ! m w.e.
   ReferenceElevation = 2200  !-700     ! m
   InitialDebris = 0             ! m
-  
-  !AblationDays = 120            !
-  AblationDays =  -zs*7.0/50.0 + 470.0
-  If(AblationDays .lt. 0.0) then
-    AblationDays = 0.0
-  Else if(AblationDays .gt. 120.0) then
-    AblationDays = 120.0
-  End if
+  AblationDays = 120            !
   
   In = 100                 ! Wm^-2        incoming long wave
   Q = 500                  ! Wm^-2        incoming short wave
@@ -620,11 +602,8 @@ FUNCTION initMassBalance(Model, Node, InputArray) RESULT(massbalanceIni)
                         Rhoi*Lm*Ustar)/((((Um-(zs-ReferenceElevation)*WindSpeed/100) &
                         -2*Ustar)*EXP(-Gamma*Xr))/Ustar+EXP(Gamma*InitialDebris)))*100*24*60*60
   
-  If(-MassBalanceCmDay .ge. 0.0) then
-    MassBalanceMYear = -MassBalanceCmDay/100*70.0
-  Else
-    MassBalanceMYear = -MassBalanceCmDay/100*AblationDays
-  End if
+  MassBalanceMYear = -MassBalanceCmDay/100*AblationDays
+
   massbalanceIni = MassBalanceMYear
   
   RETURN

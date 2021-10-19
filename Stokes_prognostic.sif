@@ -13,8 +13,6 @@ Simulation
   Coordinate System = "Cartesian 2D"
   Coordinate Mapping(3) = 1 2 3
   Simulation Type = "Transient"
-  !Steady State Min Iterations = 2
-  !Steady State Max Iterations = 10
   Steady State Max Iterations = 1
   Timestepping Method = "BDF"
   BDF Order = 1
@@ -151,11 +149,11 @@ Solver 3
   !Linear System Residual Output = 500
   !Linear System Abort Not Converged = True
   
-  Steady State Convergence Tolerance = 1.0E-05
+  Steady State Convergence Tolerance = 1.0E-03
   !Stabilization Method = [Stabilized,P2/P1,Bubbles] 
   Stabilization Method = Stabilized
 
-  Nonlinear System Convergence Tolerance = 1.0E-06  !1.0E-05
+  Nonlinear System Convergence Tolerance = 1.0E-04  !1.0E-05
   Nonlinear System Convergence Measure = Solution
   Nonlinear System Max Iterations = 100 ! 1 try without non-lin iters
   Nonlinear System Newton After Iterations = 3
@@ -216,7 +214,7 @@ Solver 5
   Nonlinear System Max Iterations = 100
   Nonlinear System Convergence Tolerance  = 1.0e-6
   Nonlinear System Relaxation Factor = 0.60
-  Steady State Convergence Tolerance = 1.0e-05
+  Steady State Convergence Tolerance = 1.0e-03
   Stabilization Method = Bubbles
   ! Apply contact problem    
   Apply Dirichlet = Logical True
