@@ -6,11 +6,17 @@ The model is implemented using the Finite Element software [Elmer/Ice](http://el
 
 The most relevant file is the user function *USF_DebrisCoverage.f90*, which contains the implementation of debris advection, debris discharge mechanisms and the debris-influenced mass balance model.
 
+Solvers and USFs must be compiled typing: ``elmerf90 MySolver.F90 -o MySolver`` (the same for USFs).
+
 
 ## .sif files
 
 * *Stokes_prognostic_no_debris.sif*: debris-free glacier evolution starting from an ice-free bedrock.
 * *Stokes_prognostic.sif*: debris-induced glacier evolution starting from an arbitrary glacier state. Modify (and compile) the user function USF_DebrisCoverage.f90 in order to tune parameters governing debris dynamics and mass balance.
+
+## Solvers
+
+* *FreeSurfaceSolver_trans_stab.F90*: identical to *FreeSurfaceSolver.F90* from the Elmer distribution, but with addition of transient stabilization.
 
 ## USFs
 

@@ -85,7 +85,7 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
   MassBalance(1:NTotSurfNodes) = MassBalanceValues(1:NTotSurfNodes)
        
   !! Attention: this part is only valid for the special mesh used in 
-  !! the debris-experiment!
+  !! this debris experiment!!
   If (FirstTimeEver) then
   
     Refinement = 7   ! Please choose an odd number
@@ -281,7 +281,7 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
         
     ! Partial redistribution of debris due to slope and complete debris removal due to high driving stress
     RandomDisplace = .true.        !  .true. -> random displacement (within a deterministic range)
-                                    !  .false. -> deterministic displacement
+                                   !  .false. -> deterministic displacement
     SubgridSurfSlope = 0.0_dp
     DrivingStress = 0.0_dp
     FracToDisplace = 0.0_dp
