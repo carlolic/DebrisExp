@@ -6,8 +6,6 @@ The model is implemented using the Finite Element software [Elmer/Ice](http://el
 
 The most relevant file is the user function *USF_DebrisCoverage.f90*, which contains the implementation of debris advection, debris discharge mechanisms and the debris-influenced mass balance model.
 
-Solvers and USFs must be compiled typing: ``elmerf90 MySolver.F90 -o MySolver`` (the same for USFs).
-
 
 ## .sif files
 
@@ -16,11 +14,11 @@ Solvers and USFs must be compiled typing: ``elmerf90 MySolver.F90 -o MySolver`` 
 
 ## Solvers
 
-* *FreeSurfaceSolver_trans_stab.F90*: identical to *FreeSurfaceSolver.F90* from the Elmer distribution, but with addition of transient stabilization.
+* *FreeSurfaceSolver_trans_stab.F90*: identical to *FreeSurfaceSolver.F90* from the Elmer distribution, but with addition of transient stabilization. Command to compile: ``elmerf90 FreeSurfaceSolver_trans_stab.F90 -o FreeSurfaceSolver_trans_stab.so``.
 
 ## USFs
 
-* *USF_DebrisCoverage.f90*: user function to calculate debris advection, debris discharge and debris-influenced mass balance.
+* *USF_DebrisCoverage.f90*: user function to calculate debris advection, debris discharge and debris-influenced mass balance. Command to compile: ``elmerf90 USF_DebrisCoverage.f90 -o USF_DebrisCoverage``.
 
 ### Implemented discharge mechanisms:
 
@@ -33,10 +31,10 @@ Glacier systems without debris discharge can be reproduced setting all mechanism
 
 ### Relevant parameters:
 
-* *DebrisEisRatio*: ratio between the height of the debris column within the debris/ice mixture and the total height of the debris/ice mixture
-* *MinHeigh*: minimum glacier thickness, below which nodes are considered ice-free 
-* *MaxSlope*: maximum surface slope for the calculation of debris discharge
-* *YieldStress*: maximum debris driving stress for the calculation of debris discharge
+* *DebrisEisRatio*: ratio between the height of the debris column within the debris/ice mixture and the total height of the debris/ice mixture.
+* *MinHeigh*: minimum glacier thickness, below which nodes are considered ice-free.
+* *MaxSlope*: maximum surface slope for the calculation of debris discharge.
+* *YieldStress*: maximum debris driving stress for the calculation of debris discharge.
 * *MonitoringFile*: file registering the total debris amount after specific calculation steps. In the current version the file must be deleted before restarting a new simulation.
 
 
