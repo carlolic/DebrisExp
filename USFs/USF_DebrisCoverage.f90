@@ -20,10 +20,11 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
                      LSubSegments, SubTimeStepSize, DeltaX, DeltaY, DeltaH, DeltaDebris, DeltaDSource, DeltaVelo1, &
                      AdvCorrection, AdvTail=0.50, TotDebrisBeforeSource, TotDebrisAfterSource, &
                      TotDebrisAfterAdvection, TotDebrisAfterTailCut, TotDebrisAfterCorrection, TotDebrisAfterRemoving, &
-                     TotDebrisAfterRemovingOutside, RemovedDebris, DisplacedDebris, DebrisLoss, FracToDisplace, &
-                     Low, High, Tol, SlopeDisplacementM, SlopeDisplacementC, MaxSlopeDisplacement, MinSlopeDisplacement
+                     TotDebrisAfterRemovingOutside, DisplacedDebris, DebrisLoss, FracToDisplace, Low, High, Tol, &
+                     SlopeDisplacementM, SlopeDisplacementC, MaxSlopeDisplacement, MinSlopeDisplacement
   LOGICAL :: FirstTime, FirstTimeEver=.true., FirstOutside, CutTail, RandomDisplace
-  LOGICAL :: DebrisSlideNode=.false., DebrisSlideFull=.false., DebrisSlideYieldStress=.false., DebrisSlideRandom=.false. 
+  LOGICAL :: DebrisSlideNode=.false., DebrisSlideFull=.false., DebrisSlideYieldStress=.false., DebrisSlidePartial=.true.
+  CHARACTER(LEN=MAX_NAME_LEN) :: MonitoringFile='DebrisMonitoring.dat'
   REAL(KIND=dp), ALLOCATABLE :: DebrisPost(:), Debris(:), DebrisSource(:), MassBalance(:), &
                               Coord1(:), Coord2(:), Velo1(:), Velo2(:), Height(:), SurfSlope(:), SubgridX(:), &
                               SubgridD(:), SubgridDSource(:), SubgridDPost(:), SubgridVelo1(:), SubgridY(:), &
@@ -111,7 +112,7 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     SubgridX(NSubgridNodes) = Coord1(NTotSurfNodes)
     SubgridD(NSubgridNodes) = Debris(NTotSurfNodes)    
     
-    OPEN(1, file = 'DebrisMonitoring.dat', status = 'new') 
+    OPEN(1, file = MonitoringFile, status = 'new') 
     WRITE(1,*) 'BeforeSource  ', 'AfterSource  ', 'AfterAdvection  ', 'AfterTailCut  ', &
                'AfterCorrection  ', 'AfterRemoving  ', 'AfterRemovingOutside'
     CLOSE(1)
@@ -196,17 +197,10 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     ! DEBRIS ADVECTION        
     !!!!!!
     
-    !DebrisPost(1) = 0.0_dp
-    !Do i = 2,NTotSurfNodes
-    !  DebrisPost(i) = Debris(i) + (Velo1(i)*TimeStepSize)/(ABS(Coord1(i)-Coord1(i-1)))*(Debris(i)-Debris(i-1))      
-    !End do
-    
     SubTimeStepSize = TimeStepSize/NSubTimeSteps
     SubgridDPost(1) = 0.0_dp
     Do t=1,NSubTimeSteps
       Do i = 2,NSubgridNodes
-        !SubgridDPost(i) = SubgridD(i) + &
-        !  (SubgridVelo1(i)*SubTimeStepSize)/(ABS(SubgridX(i)-SubgridX(i-1)))*(SubgridD(i)-SubgridD(i-1))      
         If(SubgridH(i) .gt. MinHeight) then
           SubgridDPost(i) = SubgridD(i) + &
             (SubgridVelo1(i)*SubTimeStepSize)/(ABS(SubgridX(i)-SubgridX(i-1)))*(SubgridD(i)-SubgridD(i-1)) + &
@@ -247,7 +241,7 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     TotDebrisAfterCorrection = SUM(SubgridD)
     
     
-    ! Redistribution of debris due to slide on steep slopes (single node debrisfree)
+    ! Debris removal due to slide on steep slopes (from subnode to the next subnode)
     SubgridSurfSlope = 0.0_dp     
     If(DebrisSlideNode) then
       Do i = 10,NSubgridNodes-1          !Skip first nodes with non-realistic surface shape
@@ -259,20 +253,19 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
       End do
     End if
 
-    ! Redistribution of debris due to slide on steep slopes (whole tongue debrisfree)
+    ! Debris removal due to slide on steep slopes (complete removal downstream of subnode)
     SubgridSurfSlope = 0.0_dp     
     If(DebrisSlideFull) then  
       Do i = 10,NSubgridNodes-1         !Skip first nodes with non-realistic surface shape
         SubgridSurfSlope(i) = (SubgridY(i+1)-SubgridY(i))/(SubgridX(i+1)-SubgridX(i))
         If(SubgridSurfSlope(i) .gt. MaxSlope) then
-          RemovedDebris = SUM(SubgridDPost(i:NSubgridNodes))
           SubgridDPost(i:NSubgridNodes) = 0.0_dp                    
           Exit
         End if
       End do
     End if    
     
-    ! Redistribution of debris due to high driving stress
+    ! Debris removal due to high driving stress (complete removal downstream of subnode)
     SubgridSurfSlope = 0.0_dp
     DrivingStress = 0.0_dp
     If(DebrisSlideYieldStress) then  
@@ -280,19 +273,15 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
         SubgridSurfSlope(i) = (SubgridY(i+1)-SubgridY(i))/(SubgridX(i+1)-SubgridX(i))
         DrivingStress(i) = Rho_d*G*SubgridDPost(i)*ABS(SQRT(SubgridSurfSlope(i)**2/(SubgridSurfSlope(i)**2+1)))
         If((SUM(DrivingStress(i-Refinement+1:i))/Refinement) .gt. YieldStress) then
-          RemovedDebris = SUM(SubgridDPost(i-Refinement+1:NSubgridNodes))
           SubgridDPost(i-Refinement+1:NSubgridNodes) = 0.0_dp
           Exit
         End if       
       End do
     End if    
-    
-!     Do i=2000,2300
-!       PRINT *, GlacierStatus, i, SubgridD(i), SubgridDPost(i), DrivingStress(i)
-!     End do
-    
-    ! Redistribution of debris due to random slip and yield stress
-    RandomDisplace = .false.
+        
+    ! Partial redistribution of debris due to slope and complete debris removal due to high driving stress
+    RandomDisplace = .true.        !  .true. -> random displacement (within a deterministic range)
+                                    !  .false. -> deterministic displacement
     SubgridSurfSlope = 0.0_dp
     DrivingStress = 0.0_dp
     FracToDisplace = 0.0_dp
@@ -300,13 +289,13 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     Low = 0.0_dp
 
     DebrisLoss = 0.0_dp
-    SlopeDisplacementM = 1.0_dp
-    SlopeDisplacementC = 0.20_dp
+    SlopeDisplacementM = 1.0_dp          ! parameter M
+    SlopeDisplacementC = 0.20_dp         ! parameter C
     MaxSlopeDisplacement = 1.0_dp
     MinSlopeDisplacement = 0.0_dp
-    Tol = 0.10_dp
+    Tol = 0.10_dp                        ! parameter \delta
     
-    If(DebrisSlideRandom) then  
+    If(DebrisSlidePartial) then  
       Do i = 10,NSubgridNodes-1         !Skip first nodes with non-realistic surface shape
         
         SubgridSurfSlope(i) = (SubgridY(i+1)-SubgridY(i))/(SubgridX(i+1)-SubgridX(i))
@@ -336,7 +325,6 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
 
         DrivingStress(i) = Rho_d*G*SubgridDPost(i)*ABS(SQRT(SubgridSurfSlope(i)**2/(SubgridSurfSlope(i)**2+1)))
         If((SUM(DrivingStress(i-Refinement+1:i))/Refinement) .gt. YieldStress) then
-          RemovedDebris = SUM(SubgridDPost(i-Refinement+1:NSubgridNodes))
           SubgridDPost(i-Refinement+1:NSubgridNodes) = 0.0_dp
           Exit
         End if
@@ -349,6 +337,7 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     SubgridD(1:NSubgridNodes) = SubgridDPost(1:NSubgridNodes)
     TotDebrisAfterRemoving = SUM(SubgridD)
 
+    
     ! Eliminate debris if outside the glacier
     If(GlacierStatus == 2) then
       Do i=1,NTotSurfNodes-1
@@ -359,13 +348,11 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
         End if      
       End do   
     End if  
-    !Do i=1,NSubgridNodes
-    !  PRINT *, i, TerminusNode, TerminusSubNode, SubgridH(i), SubgridD(i), SubgridDPost(i), SubgridDSource(i)
-    !End do
+
     SubgridD(1:NSubgridNodes) = SubgridDPost(1:NSubgridNodes)
     TotDebrisAfterRemovingOutside = SUM(SubgridD)
     
-    OPEN(1, file = 'DebrisMonitoring.dat', status = 'old', position="append")  
+    OPEN(1, file = MonitoringFile, status = 'old', position="append")  
     WRITE(1,*) TotDebrisBeforeSource, TotDebrisAfterSource, TotDebrisAfterAdvection, &
                  TotDebrisAfterTailCut, TotDebrisAfterCorrection, TotDebrisAfterRemoving, &
                  TotDebrisAfterRemovingOutside
@@ -379,16 +366,9 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
     IterN = 1
     SurfNodeN = 1
 
-    !PRINT *, 'SurfSlope ', SurfSlope
-    !PRINT *, 'MassBalance ', MassBalance
-    !PRINT *, 'Debris ', Debris
-    !PRINT *, 'DebrisPost ', DebrisPost
- 
   End if
   
-  !NodeIndexes => Model % CurrentElement % NodeIndexes
-  !PRINT *, 'sesesese', Model % Mesh % Nodes % x(NodeIndexes)  
-  
+
   If(MODULO(IterN,2) .ne. 0) then
     debrisTh = DebrisPost(SurfNodeN)
     SurfNodeN = SurfNodeN+1
@@ -406,7 +386,6 @@ FUNCTION getDebrisThickness(Model, Node) RESULT(debrisTh)
   RETURN
 
 END FUNCTION getDebrisThickness
-
 
 
 
@@ -439,6 +418,7 @@ FUNCTION initDebris(Model, Node, InputArray) RESULT(debrisIni)
 END FUNCTION initDebris
 
 
+
 FUNCTION getMassBalance(Model, Node, InputArray) RESULT(MassBalance)
 
   USE DefUtils
@@ -461,13 +441,7 @@ FUNCTION getMassBalance(Model, Node, InputArray) RESULT(MassBalance)
     
   Coord2 = InputArray(1)
   Debris = InputArray(2)
-    
-  !IF((Debris .gt. 0.1_dp) .and. (Debris .lt. 0.5_dp)) THEN
-  !  Debris = 0.5
-  !ELSE IF((Debris .gt. 0.0_dp) .and. (Debris .le. 0.1_dp)) THEN
-  !  Debris = 0.0
-  !END IF
-    
+        
   ! altitude gradients of the crucial parameters (radiation from Marty et al., TaAClimat; 2002)
   LW = 2.9          ! W/m^2 /100m                       2.9
   SW = 1.3          ! W/m^2 /100m                       1.3
@@ -525,7 +499,6 @@ FUNCTION getMassBalance(Model, Node, InputArray) RESULT(MassBalance)
   RETURN
 
 END FUNCTION getMassBalance
-
 
 
 
@@ -612,7 +585,6 @@ END FUNCTION initMassBalance
 
 
 
-
 FUNCTION getMinZs(Model, Node, InputArray) RESULT(MinZs)
 
   USE DefUtils
@@ -636,7 +608,6 @@ FUNCTION getMinZs(Model, Node, InputArray) RESULT(MinZs)
   RETURN
 
 END FUNCTION getMinZs
-
 
 
 
